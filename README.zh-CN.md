@@ -8,6 +8,12 @@
 
 上图是 UI 设计稿，数值为示例。实际固件使用 Adafruit GFX 绘制。
 
+## 实物原型
+
+![CampusDashboard 实物亮屏，显示时钟页面](docs/images/prototype-overview.jpg)
+
+![按下实体按键，依次切换仪表盘的四个页面](docs/images/prototype-demo.gif)
+
 ## 开始使用
 
 1. 在 Arduino IDE 2 的开发板管理器安装 `esp32 by Espressif Systems`，选择 `ESP32S3 Dev Module` 和实际串口。N16R8 使用 16 MB Flash。曾在 Arduino-ESP32 3.3.12 环境中烧录项目原型。
@@ -24,3 +30,5 @@
 ![CampusDashboard v1.2.0 接线图](docs/images/wiring.svg)
 
 四个按钮各接一个 GPIO，另一端都接公共 GND。左上 GPIO4、左下 GPIO5 接好后留作后续使用。v1.2.0 使用右上 GPIO6 和右下 GPIO7 翻页，并启用这两路的内部上拉。屏幕 J1 已短接时，VCC 和 LED 都接 3.3 V。
+
+![ESP32-S3、四个按钮和面包板接线近照](docs/images/prototype-wiring.jpg)

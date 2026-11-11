@@ -8,6 +8,12 @@ An ESP32-S3 dashboard with a 2.8-inch ILI9341 SPI display for the University of 
 
 This UI mockup uses sample values. The firmware draws the interface with Adafruit GFX.
 
+## Working prototype
+
+![Working CampusDashboard prototype showing the clock page](docs/images/prototype-overview.jpg)
+
+![Physical buttons cycling through all four dashboard pages](docs/images/prototype-demo.gif)
+
 ## Getting started
 
 1. In Arduino IDE 2, install `esp32 by Espressif Systems` from Boards Manager. Select `ESP32S3 Dev Module` and the serial port for your board. Set Flash Size to 16 MB for the N16R8 variant. The prototype was uploaded using Arduino-ESP32 3.3.12.
@@ -24,3 +30,5 @@ Outdoor weather data comes from [Open-Meteo](https://open-meteo.com/en/docs). Th
 ![CampusDashboard v1.2.0 wiring diagram](docs/images/wiring.svg)
 
 Connect each of the four buttons between its GPIO pin and common GND. The left buttons (GPIO4 and GPIO5) are wired for future use. In v1.2.0, GPIO6 and GPIO7 are the active navigation inputs and use internal pull-ups. With the display's J1 bridged, connect both VCC and LED to 3.3 V.
+
+![Close-up of the ESP32-S3, four buttons, and breadboard wiring](docs/images/prototype-wiring.jpg)
