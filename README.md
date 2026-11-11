@@ -18,3 +18,9 @@ This UI mockup uses sample values. The firmware draws the interface with Adafrui
 The upper-right button (GPIO6) moves to the previous page, and the lower-right button (GPIO7) moves to the next page. Navigation wraps in both directions. Earlier versions use GPIO4–7 to open the four pages directly.
 
 Outdoor weather data comes from [Open-Meteo](https://open-meteo.com/en/docs). The clock synchronizes over NTP and displays Malaysia Time (UTC+8). The prototype firmware currently skips HTTPS server certificate verification.
+
+## Wiring
+
+![CampusDashboard v1.2.0 wiring diagram](docs/images/wiring.svg)
+
+Connect each of the four buttons between its GPIO pin and common GND. The left buttons (GPIO4 and GPIO5) are wired for future use. In v1.2.0, GPIO6 and GPIO7 are the active navigation inputs and use internal pull-ups. With the display's J1 bridged, connect both VCC and LED to 3.3 V.

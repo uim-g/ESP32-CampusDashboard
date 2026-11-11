@@ -18,3 +18,9 @@
 右上 GPIO6 上翻，右下 GPIO7 下翻，首尾双向循环。早期版本使用 GPIO4–7 直达四页。
 
 天气使用 [Open-Meteo](https://open-meteo.com/en/docs) 的室外模型数据。时钟通过 NTP 校时，显示 MYT（UTC+8）。固件当前以原型设置跳过 HTTPS 服务器证书校验。
+
+## 接线
+
+![CampusDashboard v1.2.0 接线图](docs/images/wiring.svg)
+
+四个按钮各接一个 GPIO，另一端都接公共 GND。左上 GPIO4、左下 GPIO5 接好后留作后续使用。v1.2.0 使用右上 GPIO6 和右下 GPIO7 翻页，并启用这两路的内部上拉。屏幕 J1 已短接时，VCC 和 LED 都接 3.3 V。
