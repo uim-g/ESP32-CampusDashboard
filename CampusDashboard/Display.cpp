@@ -8,7 +8,7 @@ constexpr uint16_t Card = 0x1927;
 constexpr uint16_t Accent = 0x5EFF;
 
 // 用 GFX 图形绘制图标，无需额外图片、字体或 SD 卡。
-void drawWeatherIcon(Adafruit_ILI9341& screen, int x, int y, int code) {
+void drawWeatherIcon(Adafruit_GFX& screen, int x, int y, int code) {
   screen.fillRect(x - 22, y - 17, 44, 34, Card);
   if (code < 0) return;
 
@@ -44,8 +44,6 @@ String number(float value, unsigned digits = 0) {
 
 constexpr int PanelX = 54;
 constexpr int PanelY = 16;
-constexpr int PanelWidth = 212;
-constexpr int PanelHeight = 208;
 constexpr uint16_t Muted = 0xA69A;
 
 String timeSpan(uint32_t seconds) {
@@ -63,9 +61,11 @@ void Display::begin() {
   screen.begin(10000000);
   screen.setRotation(Config::rotation == 3 ? 3 : 1);
   screen.setTextWrap(false);
+  screen.fillScreen(Background);
+  canvas.setTextWrap(false);
 }
 
-void Display::frame(uint8_t page) {
+void Display::drawTabs(uint8_t page) {
   struct Tab {
     const char* label;
     int x, y;
@@ -75,11 +75,9 @@ void Display::frame(uint8_t page) {
     {"3-DAY >", 269, 56}, {"NET >", 269, 156}
   };
 
-  screen.fillScreen(Background);
-  screen.fillRoundRect(PanelX, PanelY, PanelWidth, PanelHeight, 10, Card);
-  screen.drawRoundRect(PanelX, PanelY, PanelWidth, PanelHeight, 10, Accent);
   screen.setTextSize(1);
   for (uint8_t i = 0; i < pageCount; ++i) {
+    if (activePage < pageCount && i != activePage && i != page) continue;
     const auto& tab = tabs[i];
     const bool active = i == page;
     screen.fillRoundRect(tab.x, tab.y, 49, 23, 5, active ? Accent : Card);
@@ -89,6 +87,12 @@ void Display::frame(uint8_t page) {
     screen.print(tab.label);
   }
 
+  activePage = page;
+}
+
+void Display::frame() {
+  target->fillRoundRect(PanelX - originX, PanelY - originY, PanelWidth, PanelHeight, 10, Card);
+  target->drawRoundRect(PanelX - originX, PanelY - originY, PanelWidth, PanelHeight, 10, Accent);
   // 换页后清空绘制缓存。平时保留卡片与导航，只刷新变化的字段。
   for (auto& text : previous) text = "";
   for (auto& code : previousIcons) code = -2;
@@ -105,20 +109,33 @@ void Display::field(uint8_t slot, int x, int y, uint8_t size, uint8_t columns,
   while (visible.length() < columns) visible += ' ';
   if (previous[slot] == visible) return;
   previous[slot] = visible;
-  screen.setCursor(x, y);
-  screen.setTextSize(size);
-  screen.setTextColor(color, Card);
-  screen.print(visible);
+  target->setCursor(x - originX, y - originY);
+  target->setTextSize(size);
+  target->setTextColor(color, Card);
+  target->print(visible);
 }
 
 void Display::icon(uint8_t slot, int x, int y, int code) {
   if (previousIcons[slot] == code) return;
   previousIcons[slot] = code;
-  drawWeatherIcon(screen, x, y, code);
+  drawWeatherIcon(*target, x - originX, y - originY, code);
 }
 
 void Display::show(uint8_t page, const WeatherData& w, bool newPage) {
-  if (newPage) frame(page);
+  const bool buffered = newPage && canvas.getBuffer();
+  if (newPage) {
+    drawTabs(page);
+    if (buffered) {
+      target = &canvas;
+      originX = PanelX;
+      originY = PanelY;
+      canvas.fillScreen(Background);
+    } else {
+      // 内存不足时直接绘制，页面仍能切换。
+      screen.fillRect(PanelX, PanelY, PanelWidth, PanelHeight, Background);
+    }
+    frame();
+  }
 
   switch (page) {
     case 0: {
@@ -130,7 +147,7 @@ void Display::show(uint8_t page, const WeatherData& w, bool newPage) {
         strftime(date, sizeof(date), "%a %d %b %Y", &local);
       }
       field(0, 64, 65, 4, 8, clock);
-      if (newPage) screen.drawFastHLine(77, 111, 166, Accent);
+      if (newPage) target->drawFastHLine(77 - originX, 111 - originY, 166, Accent);
       field(1, 64, 126, 2, 16, date, ILI9341_WHITE, true);
       field(2, 64, 153, 2, 16, "MYT UTC+8", Accent, true);
       field(3, 64, 182, 2, 16, Config::location, Muted, true);
@@ -159,7 +176,7 @@ void Display::show(uint8_t page, const WeatherData& w, bool newPage) {
       field(0, 64, 36, 1, 32, "DATE          HI/LO C   RAIN", Accent);
       for (uint8_t i = 0; i < 3; ++i) {
         const int y = 51 + i * 41;
-        if (previousIcons[i] == -2) screen.drawRoundRect(62, y, 196, 39, 5, Muted);
+        if (previousIcons[i] == -2) target->drawRoundRect(62 - originX, y - originY, 196, 39, 5, Muted);
         icon(i, 118, y + 19, w.dailyCode[i]);
         field(1 + i * 3, 67, y + 15, 1, 5, i == 0 ? String("Today") : String(w.dates[i]).substring(5));
         field(2 + i * 3, 145, y + 13, 2, 6, number(w.high[i]) + "/" + number(w.low[i]));
@@ -171,7 +188,7 @@ void Display::show(uint8_t page, const WeatherData& w, bool newPage) {
     case 3: {
       const bool online = WiFi.status() == WL_CONNECTED;
       field(0, 64, 43, 2, 16, online ? "WiFi Connected" : "WiFi Offline", Accent, true);
-      if (newPage) screen.drawFastHLine(72, 69, 176, Accent);
+      if (newPage) target->drawFastHLine(72 - originX, 69 - originY, 176, Accent);
       field(1, 64, 82, 1, 32, online ? String("SSID: ") + WiFi.SSID() : "SSID: --", Muted);
       field(2, 64, 101, 1, 32, online ? String("IP: ") + WiFi.localIP().toString() : "IP: --");
       field(3, 64, 124, 2, 16, online ? String("RSSI ") + WiFi.RSSI() + " dBm" : "RSSI --");
@@ -179,5 +196,11 @@ void Display::show(uint8_t page, const WeatherData& w, bool newPage) {
       field(5, 64, 180, 2, 16, String("Heap ") + ESP.getFreeHeap() / 1024 + " KiB");
       break;
     }
+  }
+
+  if (buffered) {
+    screen.drawRGBBitmap(PanelX, PanelY, canvas.getBuffer(), PanelWidth, PanelHeight);
+    target = &screen;
+    originX = originY = 0;
   }
 }
