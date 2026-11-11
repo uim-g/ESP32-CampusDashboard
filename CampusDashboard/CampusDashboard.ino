@@ -5,7 +5,6 @@
 #include <WiFi.h>
 #include <time.h>
 
-static_assert(PageButtons::count == Display::pageCount, "Each page needs a button");
 PageButtons buttons;
 Weather weather;
 Display display;
@@ -26,8 +25,10 @@ void setup() {
 
 void loop() {
   const uint32_t now = millis();
-  const int selected = buttons.pressedPage(now);
-  const bool pageChanged = selected >= 0 && selected != page;
+  int selected = page + buttons.direction(now);
+  if (selected == Display::pageCount) selected = 0;
+  if (selected < 0) selected = Display::pageCount - 1;
+  const bool pageChanged = selected >= 0 && selected < Display::pageCount && selected != page;
   if (pageChanged) page = selected;
   if (pageChanged || now - lastDraw >= 1000) {
     lastDraw = now;

@@ -4,7 +4,7 @@
 // 按钮按下时将 GPIO 拉低。内部上拉让松开时保持高电平。
 class PageButtons {
  public:
-  static constexpr uint8_t count = 4;
+  static constexpr uint8_t count = 2;
 
   void begin() {
     const uint32_t now = millis();
@@ -15,10 +15,10 @@ class PageButtons {
     }
   }
 
-  // 返回按下的按钮对应的页面编号。没有新按下时返回 -1。
+  // 上一页 -1，下一页 +1，没有按键事件时返回 0。
   // 只识别稳定的按下边沿，长按不重复触发。
-  int pressedPage(uint32_t now) {
-    int selected = -1;
+  int direction(uint32_t now) {
+    int selected = 0;
     for (uint8_t i = 0; i < count; ++i) {
       auto& button = buttons[i];
       const bool reading = digitalRead(button.pin);
@@ -28,7 +28,7 @@ class PageButtons {
       }
       if (button.stable != button.raw && now - button.changedAt >= debounceMs) {
         button.stable = button.raw;
-        if (button.stable == LOW && selected < 0) selected = i;
+        if (button.stable == LOW && selected == 0) selected = i == 0 ? -1 : 1;
       }
     }
     return selected;
@@ -42,5 +42,5 @@ class PageButtons {
     bool stable = HIGH;
     uint32_t changedAt = 0;
   };
-  Button buttons[count] = {{4}, {5}, {6}, {7}};
+  Button buttons[count] = {{6}, {7}};
 };
